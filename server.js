@@ -151,7 +151,6 @@ function addRole(){
 
     db.query(`SELECT * FROM departments`, function(err,res){
         let document_list = res;
-        console.log(document_list)
         let addRolePrompt = [
 
             {
@@ -230,7 +229,7 @@ function addEmployee(){
                 {
                     name: "new_manager",
                     type: "list",
-                    message: "What is the employee's role?",
+                    message: "Who is the employee's manager?",
                     choices: manager_list
                 }   
             ];
@@ -255,7 +254,6 @@ function addEmployee(){
                         db.query(employee_insert_query,{
                             first_name: data.new_first_name,
                             last_name: data.new_last_name,
-                            // new emplyees table role_id col value is extracted by parsing roleId from the selected roles array string and converting it to int
                             role_id: parseInt(data.new_role.split(":")[0])
                         }, function(err,res){
                             if (err) throw err;
