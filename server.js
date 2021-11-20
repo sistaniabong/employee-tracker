@@ -7,9 +7,7 @@ const mysql = require('mysql2');
 const db = mysql.createConnection(
     {
       host: 'localhost',
-      // MySQL username,
       user: 'root',
-      // TODO: Add MySQL password here
       password: 'bootcamp2021',
       database: 'business_db'
     },
@@ -34,8 +32,7 @@ function appPrompt() {
                     'Add department',
                     'Add employee',
                     'Update employee role',
-                    'View employees by manager',
-                    'View employees by department'
+                    'Quit'
                 ]
             },
         )
@@ -50,6 +47,13 @@ function appPrompt() {
             addRole();
         }else if (data.action === 'Add department'){
             addDepartment();
+        }else if (data.action === 'Add employee'){
+            addEmployee();
+        }else if (data.action === 'Update employee role'){
+            updateEmployee();
+        }else if (data.action === 'Quit'){
+            db.end();
+            console.log("Thank you!");
         }
     })
     
@@ -73,7 +77,6 @@ function viewAllRoles(){
 
     db.query(query, function(err,res){
         if (err) throw err;
-        console.table(res); 
         appPrompt();
     })
 
@@ -148,6 +151,7 @@ function addRole(){
 
     db.query(`SELECT * FROM departments`, function(err,res){
         let document_list = res;
+        console.log(document_list)
         let addRolePrompt = [
 
             {
@@ -184,12 +188,150 @@ function addRole(){
         })
 
     })
-
-    
-
-    
-    
 }
+
+function addEmployee(){
+
+    db.query(`SELECT id, title FROM roles`, function(err,res){
+        roles_list = [];
+        for(i = 0; i < res.length; i++) {              
+            // looping parameter "i" will allways align with the table index, therefore by adding 1 we have effectivly converted it to match table id's
+            const roleId = i + 1;
+            // concat roleId and title strings and push the resulting string into our roles (choises) array 
+            roles_list.push(roleId + ": " + res[i].title);
+
+        };
+
+        db.query(`SELECT e1.id, e1.first_name, e1.last_name FROM employees e1`, function(err,res){
+            if (err) throw err;
+            manager_list = [];
+            for(i = 0; i < res.length; i++) {
+                if (res[i].first_name && res[i].last_name){
+                    manager_list.push(res[i].id + ": " + res[i].first_name + ' ' + res[i].last_name);
+                    // res[i].manager = res[i].first_name + ' ' + res[i].last_name; 
+                }
+            }
+            manager_list.push('0: None');
+
+            let addRolePrompt = [
+
+                {
+                    name: "new_first_name",
+                    type: "input",
+                    message: "What is the first name of the employee?"
+                },
+                {
+                    name: "new_last_name",
+                    type: "input",
+                    message: "What is the last name of the employee?"
+                },
+                {
+                    name: "new_role",
+                    type: "list",
+                    message: "What is the employee's role?",
+                    choices: roles_list
+                },
+                {
+                    name: "new_manager",
+                    type: "list",
+                    message: "What is the employee's role?",
+                    choices: manager_list
+                }   
+            ];
+            inquirer
+                .prompt(addRolePrompt)
+                .then((data) => {
+                    let employee_insert_query = "INSERT INTO employees SET ?";
+                    console.log(parseInt(data.new_manager.split(":")[0]))
+                    if (parseInt(data.new_manager.split(":")[0])){
+                        db.query(employee_insert_query,{
+                            first_name: data.new_first_name,
+                            last_name: data.new_last_name,
+                            // new emplyees table role_id col value is extracted by parsing roleId from the selected roles array string and converting it to int
+                            role_id: parseInt(data.new_role.split(":")[0]),
+                            // new emplyees table manager_id col value is extracted by parsing mId from the selected managers array string and converting it to int
+                            manager_id: parseInt(data.new_manager.split(":")[0])
+    
+                        }, function(err,res){
+                            if (err) throw err;
+                            console.log(`New employee "${data.new_first_name} ${data.new_last_name}" has been added successfully.`);
+                            appPrompt();
+                        });
+                    } 
+                    else{
+                        db.query(employee_insert_query,{
+                            first_name: data.new_first_name,
+                            last_name: data.new_last_name,
+                            // new emplyees table role_id col value is extracted by parsing roleId from the selected roles array string and converting it to int
+                            role_id: parseInt(data.new_role.split(":")[0])
+                        }, function(err,res){
+                            if (err) throw err;
+                            console.log(`New employee "${data.new_first_name} ${data.new_last_name}" has been added successfully.`);
+                            appPrompt();
+                        });
+                    }
+                    
+            });
+        }); 
+    });
+};
+
+
+function updateEmployee(){
+
+
+
+        db.query(`SELECT e1.id, e1.first_name, e1.last_name FROM employees e1`, function(err,res){
+            if (err) throw err;
+            employee_list = [];
+            for(i = 0; i < res.length; i++) {
+                if (res[i].first_name && res[i].last_name){
+                    employee_list.push(res[i].id + ": " + res[i].first_name + ' ' + res[i].last_name);
+                    // res[i].manager = res[i].first_name + ' ' + res[i].last_name; 
+                }
+            }
+            db.query(`SELECT id, title FROM roles`, function(err,res){
+                roles_list = [];
+                for(i = 0; i < res.length; i++) {              
+                    // looping parameter "i" will allways align with the table index, therefore by adding 1 we have effectivly converted it to match table id's
+                    const roleId = i + 1;
+                    // concat roleId and title strings and push the resulting string into our roles (choises) array 
+                    roles_list.push(roleId + ": " + res[i].title);
+                };
+
+            let addRolePrompt = [
+
+                {
+                    name: "employee",
+                    type: "list",
+                    message: "Which employee's role do you want to update?",
+                    choices: employee_list
+                },
+                {
+                    name: "role",
+                    type: "list",
+                    message: "Which role do you want to assign the selected employee?",
+                    choices: roles_list
+                }
+            ];
+            inquirer
+                .prompt(addRolePrompt)
+                .then((data) => {
+                    let selectedEmp = data.employee.split(":")[0]
+                    let query = "UPDATE employees SET ? WHERE employees.id = " + selectedEmp;
+                    
+                    db.query(query,{
+                        role_id: parseInt(data.role.split(":")[0]),                 
+                    }, function(err,res){
+                        if (err) throw err;
+                        console.log(`${data.employee.split(": ")[1]}'s role has been updated successfully.`);
+                        appPrompt();
+                    });
+                    
+            });
+        }); 
+    })
+};
 
 
 appPrompt();
