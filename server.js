@@ -177,7 +177,6 @@ function addRole(){
         .then((data) => {
             db.query(`SELECT id FROM departments WHERE name = ?`, data.new_department, function(err,res){
                 let value = [data.new_role, parseFloat(data.new_salary), res[0].id]
-                console.log(value)
                 let role_insert_query = `INSERT INTO roles(title, salary, department_id) VALUES (?,?,?);`;
                 db.query(role_insert_query, [value[0], value[1], value[2]], function(err,res){
                     if (err) throw err;
@@ -195,9 +194,7 @@ function addEmployee(){
     db.query(`SELECT id, title FROM roles`, function(err,res){
         roles_list = [];
         for(i = 0; i < res.length; i++) {              
-            // looping parameter "i" will allways align with the table index, therefore by adding 1 we have effectivly converted it to match table id's
             const roleId = i + 1;
-            // concat roleId and title strings and push the resulting string into our roles (choises) array 
             roles_list.push(roleId + ": " + res[i].title);
 
         };
@@ -208,7 +205,6 @@ function addEmployee(){
             for(i = 0; i < res.length; i++) {
                 if (res[i].first_name && res[i].last_name){
                     manager_list.push(res[i].id + ": " + res[i].first_name + ' ' + res[i].last_name);
-                    // res[i].manager = res[i].first_name + ' ' + res[i].last_name; 
                 }
             }
             manager_list.push('0: None');
@@ -242,14 +238,11 @@ function addEmployee(){
                 .prompt(addRolePrompt)
                 .then((data) => {
                     let employee_insert_query = "INSERT INTO employees SET ?";
-                    console.log(parseInt(data.new_manager.split(":")[0]))
                     if (parseInt(data.new_manager.split(":")[0])){
                         db.query(employee_insert_query,{
                             first_name: data.new_first_name,
                             last_name: data.new_last_name,
-                            // new emplyees table role_id col value is extracted by parsing roleId from the selected roles array string and converting it to int
                             role_id: parseInt(data.new_role.split(":")[0]),
-                            // new emplyees table manager_id col value is extracted by parsing mId from the selected managers array string and converting it to int
                             manager_id: parseInt(data.new_manager.split(":")[0])
     
                         }, function(err,res){
@@ -287,15 +280,12 @@ function updateEmployee(){
             for(i = 0; i < res.length; i++) {
                 if (res[i].first_name && res[i].last_name){
                     employee_list.push(res[i].id + ": " + res[i].first_name + ' ' + res[i].last_name);
-                    // res[i].manager = res[i].first_name + ' ' + res[i].last_name; 
                 }
             }
             db.query(`SELECT id, title FROM roles`, function(err,res){
                 roles_list = [];
                 for(i = 0; i < res.length; i++) {              
-                    // looping parameter "i" will allways align with the table index, therefore by adding 1 we have effectivly converted it to match table id's
                     const roleId = i + 1;
-                    // concat roleId and title strings and push the resulting string into our roles (choises) array 
                     roles_list.push(roleId + ": " + res[i].title);
                 };
 
